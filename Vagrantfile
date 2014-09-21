@@ -14,6 +14,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   $cloudstackscript = <<SCRIPT
 #!/usr/bin/env bash
+pip install cloudmonkey
+apt-get install -y curl rubygems
+gem install jgrep
 cd /automation/cloudstack
 mvn -Pdeveloper -pl developer -Ddeploydb
 mvn -Pdeveloper -pl developer -Ddeploydb-simulator
