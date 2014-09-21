@@ -1,0 +1,15 @@
+<%= select_f f, :flavor_id, compute_resource.flavors, :id, :name, {}, :label => _('Flavor') %>
+<%= select_f f, :image_id, compute_resource.images, :uuid, :name, {}, :label => _('Image') %>
+<% new = f.object && f.object.id.blank? %>
+<%
+   arch ||= nil ; os ||= nil
+   images = possible_images(compute_resource, arch, os)
+%>
+<div id='image_selection'>
+image selection area
+</div>
+
+<div id='subnet_selection'>
+<%# select_f f, :zone_id, compute_resource.zones, :id, :name, {}, :label => _('Zone') %>
+<%= select_f f, :network_ids, compute_resource.networks, :id, :network_id, {}, :label => _('Subnet') %>
+</div>
