@@ -7,6 +7,7 @@ module Foreman::Model
 		after_destroy :destroy_key_pair
 		delegate :flavors, :to => :client
 		attr_accessor :zone
+		#alias_attribute :subnet_id, :network_ids
 
 		validates :url, :user, :password, :presence => true
 
@@ -91,7 +92,8 @@ module Foreman::Model
             args[:display_name] = args[:name]
             args[:name] = nil
             args[:security_group_ids] = nil
-            args[:network_ids] = [args[:network_ids]]
+            args[:network_ids] = [args[:network_ids]] if args[:network_ids]
+            args[:network_ids] = [args[:subnet_id]] if args[:subnet_id]
             args[:zone_id] = zone_id 
 			vm      = super(args)
 			vm.wait_for { nics.present? }
