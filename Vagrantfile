@@ -14,26 +14,24 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   $cloudstackscript = <<SCRIPT
 #!/usr/bin/env bash
+/etc/init.d/cloudstack-simulator stop 
 pip install cloudmonkey
 apt-get install -y curl rubygems
 gem install jgrep
 cd /automation/cloudstack
 mvn -Pdeveloper -pl developer -Ddeploydb
 mvn -Pdeveloper -pl developer -Ddeploydb-simulator
+
+# Deploy zone
+/etc/init.d/cloudstack-simulator start
+while ! nc -vz localhost 8080; do sleep 10; done # Wait for CloudStack to start
 mysql -uroot cloud -e "update configuration set value = 'false' where name = 'router.version.check';"
 mysql -uroot cloud -e "update user set api_key = 'F0Hrpezpz4D3RBrM6CBWadbhzwQMLESawX-yMzc5BCdmjMon3NtDhrwmJSB1IBl7qOrVIT4H39PTEJoDnN-4vA' where id = 2;"
 mysql -uroot cloud -e "update user set secret_key = 'uWpZUVnqQB4MLrS_pjHCRaGQjX62BTk_HU8uiPhEShsY7qGsrKKFBLlkTYpKsg1MzBJ4qWL0yJ7W7beemp-_Ng' where id = 2;"
-nohup mvn -pl client jetty:run -Dsimulator &
-
-# Deploy zone
-while ! nc -vz localhost 8080; do sleep 10; done # Wait for CloudStack to start
 unset MAVEN_OPTS
 mvn -Pdeveloper,marvin.setup -Dmarvin.config=../../vagrant/simulator-advanced.cfg -pl :cloud-marvin integration-test
-CS_ZONE_ID=$(cloudmonkey list zones | jgrep -s zone.id)
-# TODO:
-# cloudmonkey lookup CS_TEMPLATE_ID
-# cloudmonkey create isolated network and get CS_NETWORK_ID
-# create foreman computeresource zone1-vagrant
+/etc/init.d/cloudstack-simulator restart 
+while ! nc -vz localhost 8080; do sleep 10; done # Wait for CloudStack to start
 curl -s -X POST -H "Content-Type:application/json" -H "Accept:application/json" -k -u admin:changeme http://192.168.56.4:3000/api/v2/compute_resources -d '{
   "compute_resource": {
     "name": "cloudstack-test",
@@ -43,8 +41,13 @@ curl -s -X POST -H "Content-Type:application/json" -H "Accept:application/json" 
     "password": "uWpZUVnqQB4MLrS_pjHCRaGQjX62BTk_HU8uiPhEShsY7qGsrKKFBLlkTYpKsg1MzBJ4qWL0yJ7W7beemp-_Ng"
   }
 }'
+# TODO:
+# configure cloudmonkey
+#CS_ZONE_ID=$(cloudmonkey list zones | jgrep -s zone.id)
+# cloudmonkey lookup CS_TEMPLATE_ID
+# cloudmonkey create isolated network and get CS_NETWORK_ID
+# create foreman computeresource zone1-vagrant
 # create image inside compute resource, production, CentOS 5.3, userdata enabled
-
 
 
 SCRIPT
@@ -167,7 +170,7 @@ SCRIPT
     cloudstack.vm.boot_timeout = 600
     cloudstack.vm.network "private_network", ip: "192.168.56.6"
     cloudstack.vm.network "forwarded_port", guest: 8080, host: 8080
-    cloudstack.vm.box = "bgalura/cloudstack-simulator-4.3.0-forward"
+    cloudstack.vm.box = "bgalura/cloudstack-simulator4_3_forward"
     cloudstack.vm.provision :shell, inline: $cloudstackscript 
     cloudstack.vm.provider "virtualbox" do |v|
       v.memory = 1024 
