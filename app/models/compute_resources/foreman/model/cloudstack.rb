@@ -89,13 +89,14 @@ module Foreman::Model
 		end
 
 		def create_vm(args = {})
-            args[:display_name] = args[:name]
-            args[:name] = nil
-            args[:security_group_ids] = nil
-            args[:network_ids] = [args[:network_ids]] if args[:network_ids]
-            args[:network_ids] = [args[:subnet_id]] if args[:subnet_id]
-            args[:zone_id] = zone_id 
-			vm      = super(args)
+                        args[:security_group_ids] = nil
+                        args[:network_ids] = [args[:network_ids]] if args[:network_ids]
+                        args[:network_ids] = [args[:subnet_id]] if args[:subnet_id]
+                        args[:zone_id] = zone_id
+
+                        # name has to be hostname without domain: no dots allowed
+                        name = args[:name].split(/\.(?=[\w])/).first || args[:name]
+                        vm = client.servers.create(:image_id => "95902e54-c4ac-4a1a-bbe3-525a91ce1e1a", :flavor_id => "218755aa-b495-4d2d-a4b0-9e2ab7fd24da", :zone_id => args[:zone_id], :name => name)
 			vm.wait_for { nics.present? }
 			logger.info "captured ipaddress"
 			logger.info vm.nics[0]["ipaddress"] 
