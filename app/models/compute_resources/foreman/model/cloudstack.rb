@@ -117,7 +117,7 @@ module Foreman::Model
 		end
 
 		def destroy_vm uuid
-			vm = client.servers.get(uuid).destroy
+                        find_vm_by_uuid(uuid).destroy
 		rescue ActiveRecord::RecordNotFound
 			# if the VM does not exists, we don't really care.
 			true
