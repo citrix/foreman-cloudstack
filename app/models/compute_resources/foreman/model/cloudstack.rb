@@ -92,15 +92,22 @@ module Foreman::Model
                         args[:security_group_ids] = nil
                         args[:network_ids] = [args[:network_ids]] if args[:network_ids]
                         args[:network_ids] = [args[:subnet_id]] if args[:subnet_id]
+                        # set to nil, currently not working
+                        args[:network_ids] = nil
+
                         args[:zone_id] = zone_id
 
                         # name has to be hostname without domain: no dots allowed
+                        args[:display_name] = args[:name]
                         name = args[:name].split(/\.(?=[\w])/).first || args[:name]
-                        vm = client.servers.create(:image_id => "95902e54-c4ac-4a1a-bbe3-525a91ce1e1a", :flavor_id => "218755aa-b495-4d2d-a4b0-9e2ab7fd24da", :zone_id => args[:zone_id], :name => name)
+                        args[:name] = name
+
+                        options = vm_instance_defaults.merge(args.to_hash.symbolize_keys)
+                        vm = client.servers.create options
 			vm.wait_for { nics.present? }
-			logger.info "captured ipaddress"
-			logger.info vm.nics[0]["ipaddress"] 
-			logger.info vm.inspect
+			logger.warn "captured ipaddress"
+			logger.warn vm.nics[0]["ipaddress"]
+			logger.warn vm.inspect
 			vm
 		rescue => e
 			message = JSON.parse(e.response.body)['badRequest']['message'] rescue (e.to_s)
