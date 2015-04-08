@@ -78,8 +78,8 @@ module Foreman::Model
 		end
 
 		def test_connection options = {}
-			super
-			 errors[:url].empty? and errors[:user].empty? and errors[:password].empty? and zones
+			client
+			errors[:url].empty? and errors[:user].empty? and errors[:password].empty? and zones
 		rescue Fog::Compute::Cloudstack::Error => e
 			errors[:base] << e.message
 		end
